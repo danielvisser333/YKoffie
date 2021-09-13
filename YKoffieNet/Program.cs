@@ -1,4 +1,6 @@
 ﻿using DSharpPlus;
+using DSharpPlus.Net;
+using DSharpPlus.Lavalink;
 
 namespace YKoffieNet 
 { 
@@ -21,15 +23,24 @@ namespace YKoffieNet
                     Intents = DiscordIntents.AllUnprivileged,
                 }
             );
-            await discord.ConnectAsync();
-            discord.MessageCreated += async (s, e) =>
+            var endpoint = new ConnectionEndpoint
             {
-                
+                Hostname = "127.0.0.1", // From your server configuration.
+                Port = 2333 // From your server configuration
             };
+
+            var lavalinkConfig = new LavalinkConfiguration
+            {
+                Password = "youshallnotpass", // From your server configuration.
+                RestEndpoint = endpoint,
+                SocketEndpoint = endpoint
+            };
+            var lavalink = discord.UseLavalink();
+            await discord.ConnectAsync();
+            await lavalink.ConnectAsync(lavalinkConfig);
+
             await Task.Delay(-1);
         }
-        static void handle_message(DiscordClient discord, ) { 
-        
-        }
+       
     }
 }
