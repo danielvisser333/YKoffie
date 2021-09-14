@@ -1,6 +1,8 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Net;
 using DSharpPlus.Lavalink;
+using DSharpPlus.CommandsNext;
+using YKoffieNet.Commands;
 
 namespace YKoffieNet 
 { 
@@ -21,26 +23,30 @@ namespace YKoffieNet
                     Token = YKoffieNet.token,
                     TokenType = TokenType.Bot,
                     Intents = DiscordIntents.AllUnprivileged,
+                    MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Debug,
                 }
             );
-            var endpoint = new ConnectionEndpoint
+            ConnectionEndpoint endpoint = new ConnectionEndpoint
             {
                 Hostname = "127.0.0.1", // From your server configuration.
                 Port = 2333 // From your server configuration
             };
 
-            var lavalinkConfig = new LavalinkConfiguration
+            LavalinkConfiguration lavalinkConfig = new LavalinkConfiguration
             {
                 Password = "youshallnotpass", // From your server configuration.
                 RestEndpoint = endpoint,
                 SocketEndpoint = endpoint
             };
-            var lavalink = discord.UseLavalink();
+            LavalinkExtension lavalink = discord.UseLavalink();
+            CommandsNextExtension commands = discord.UseCommandsNext(new CommandsNextConfiguration() { 
+                StringPrefixes = new string[] { "!" }
+            });
+            commands.RegisterCommands<MusicMain>();
             await discord.ConnectAsync();
             await lavalink.ConnectAsync(lavalinkConfig);
 
             await Task.Delay(-1);
         }
-       
     }
 }
