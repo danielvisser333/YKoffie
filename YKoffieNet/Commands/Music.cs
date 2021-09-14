@@ -38,7 +38,10 @@ namespace YKoffieNet.Commands
                 return;
             }
             LavalinkTrack track = result.Tracks.First();
-            connection = conn;
+            if (connection == null)
+            {
+                connection = conn;
+            }
             if (conn.CurrentState.CurrentTrack == null)
             {
                 await conn.PlayAsync(track);
@@ -128,6 +131,7 @@ namespace YKoffieNet.Commands
         {
             if(queue.Count == 0)
             {
+                connection = null;
                 return;
             }
             if (connection == null) 
