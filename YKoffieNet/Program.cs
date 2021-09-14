@@ -40,7 +40,7 @@ namespace YKoffieNet
             };
             LavalinkExtension lavalink = discord.UseLavalink();
             CommandsNextExtension commands = discord.UseCommandsNext(new CommandsNextConfiguration() { 
-                StringPrefixes = new string[] { "!" }
+                StringPrefixes = new string[] { "?" }
             });
             commands.RegisterCommands<MusicMain>();
             await discord.ConnectAsync();
