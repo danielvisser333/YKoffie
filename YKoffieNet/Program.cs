@@ -8,7 +8,7 @@ namespace YKoffieNet
 { 
     public class YKoffieNet
     {
-        static string token = "ODg3MDM0NzA4NzA4NDM4MDQ2.YT-Rcg.p-23nlGLWrl8GTLdYNSACEGDqbM";
+        static string token = "ODg3MDM0NzA4NzA4NDM4MDQ2.YT-Rcg.KEVAFkbJA-PjssHnX7ivLKy4T-Y";
         
         public static void Main(string[] Args) 
         {
@@ -42,7 +42,10 @@ namespace YKoffieNet
             CommandsNextExtension commands = discord.UseCommandsNext(new CommandsNextConfiguration() { 
                 StringPrefixes = new string[] { "?" }
             });
-            commands.RegisterCommands<MusicMain>();
+            commands.RegisterCommands<PingPong>();
+            commands.RegisterCommands<JoinLeave>();
+            commands.RegisterCommands<RequestHelp>();
+            commands.RegisterCommands<Music>();
             await discord.ConnectAsync();
             await lavalink.ConnectAsync(lavalinkConfig);
 
