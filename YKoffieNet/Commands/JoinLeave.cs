@@ -51,7 +51,7 @@ namespace YKoffieNet.Commands
             await node.ConnectAsync(channel);
             node.PlaybackFinished += async (s, e) =>
             {
-                //await Music.NextInQueue(ref s);
+                await Music.NextInQueue();
             };
         }
         //Leave the channel the member is in.

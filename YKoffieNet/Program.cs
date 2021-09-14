@@ -3,6 +3,7 @@ using DSharpPlus.Net;
 using DSharpPlus.Lavalink;
 using DSharpPlus.CommandsNext;
 using YKoffieNet.Commands;
+using System.Threading.Tasks;
 
 namespace YKoffieNet 
 { 

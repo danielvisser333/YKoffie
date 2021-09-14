@@ -12,8 +12,8 @@ namespace YKoffieNet.Commands
 {
     class Music : BaseCommandModule
     {
-        public List<LavalinkTrack> queue = new List<LavalinkTrack>();
-
+        public static List<LavalinkTrack> queue = new List<LavalinkTrack>();
+        static LavalinkGuildConnection? connection;
         //Play the song at the provided URL.
         [Command("play")]
         public async Task Play(CommandContext ctx, Uri url)
@@ -38,6 +38,7 @@ namespace YKoffieNet.Commands
                 return;
             }
             LavalinkTrack track = result.Tracks.First();
+            connection = conn;
             if (conn.CurrentState.CurrentTrack == null)
             {
                 await conn.PlayAsync(track);
@@ -123,13 +124,17 @@ namespace YKoffieNet.Commands
 
             await conn.ResumeAsync();
         }
-        public async Task NextInQueue(LavalinkGuildConnection conn)
+        public async static Task NextInQueue()
         {
             if(queue.Count == 0)
             {
                 return;
             }
-            await conn.PlayAsync(queue.First());
+            if (connection == null) 
+            {
+                return;
+            }
+            await connection.PlayAsync(queue.First());
             queue.RemoveAt(0);
         }
     }
