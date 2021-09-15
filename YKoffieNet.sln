@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.0.31612.314
+VisualStudioVersion = 17.0.31710.8
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YKoffieNet", "YKoffieNet\YKoffieNet.csproj", "{7ED3FDCE-1C15-4BAB-973F-5F24FA4E336A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YKoffieNet", "YKoffieNet\YKoffieNet.csproj", "{47CB2ACF-4C0F-47EF-82C8-A914E4882244}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{7ED3FDCE-1C15-4BAB-973F-5F24FA4E336A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7ED3FDCE-1C15-4BAB-973F-5F24FA4E336A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7ED3FDCE-1C15-4BAB-973F-5F24FA4E336A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7ED3FDCE-1C15-4BAB-973F-5F24FA4E336A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47CB2ACF-4C0F-47EF-82C8-A914E4882244}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47CB2ACF-4C0F-47EF-82C8-A914E4882244}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47CB2ACF-4C0F-47EF-82C8-A914E4882244}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47CB2ACF-4C0F-47EF-82C8-A914E4882244}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {0433CA2A-3795-4E30-9396-4AF963BB15FF}
+		SolutionGuid = {E0298738-26B5-4C7B-8D95-72F0D4D49076}
 	EndGlobalSection
 EndGlobal

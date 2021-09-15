@@ -1,27 +1,24 @@
 ﻿using DSharpPlus;
-using DSharpPlus.Net;
-using DSharpPlus.Lavalink;
 using DSharpPlus.CommandsNext;
-using YKoffieNet.Commands;
-using System.Threading.Tasks;
+using DSharpPlus.Lavalink;
+using DSharpPlus.Net;
+using YKoffieNet.MusicPlay;
 
-namespace YKoffieNet 
-{ 
+namespace YKoffieNet {
     public class YKoffieNet
     {
         static string token = "ODg3MDM0NzA4NzA4NDM4MDQ2.YT-Rcg.KEVAFkbJA-PjssHnX7ivLKy4T-Y";
-        
-        public static void Main(string[] Args) 
+        public static void Main(string[] Args)
         {
             MainAsync().GetAwaiter().GetResult();
         }
-
         static async Task MainAsync()
         {
+            
             DiscordClient discord = new DiscordClient(
                 new DiscordConfiguration()
                 {
-                    Token = YKoffieNet.token,
+                    Token = token,
                     TokenType = TokenType.Bot,
                     Intents = DiscordIntents.AllUnprivileged,
                     MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Debug,
@@ -40,16 +37,14 @@ namespace YKoffieNet
                 SocketEndpoint = endpoint
             };
             LavalinkExtension lavalink = discord.UseLavalink();
-            CommandsNextExtension commands = discord.UseCommandsNext(new CommandsNextConfiguration() { 
+            CommandsNextExtension commands = discord.UseCommandsNext(new CommandsNextConfiguration()
+            {
                 StringPrefixes = new string[] { "?" }
             });
             commands.RegisterCommands<PingPong>();
-            commands.RegisterCommands<JoinLeave>();
-            commands.RegisterCommands<RequestHelp>();
             commands.RegisterCommands<Music>();
             await discord.ConnectAsync();
             await lavalink.ConnectAsync(lavalinkConfig);
-
             await Task.Delay(-1);
         }
     }
