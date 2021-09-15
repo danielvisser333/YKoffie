@@ -207,5 +207,17 @@ namespace YKoffieNet.MusicPlay
             }
             catch (Exception) { }
         }
+        [Command("shuffle")]
+        public async Task Shuffle(CommandContext ctx)
+        {
+            try
+            {
+                LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
+                int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
+                Random rand = new Random();
+                queues[queueIndex].Item2.OrderBy(x => rand.Next());
+            }
+            catch (Exception) { }
+        }
     }
 }
