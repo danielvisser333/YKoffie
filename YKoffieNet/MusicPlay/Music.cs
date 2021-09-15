@@ -136,7 +136,8 @@ namespace YKoffieNet.MusicPlay
                 return;
             }
         }
-        #endregion 
+        #endregion
+        #region Queue
         public void AddToQueue(DiscordGuild guild, LavalinkTrack track)
         {
             try
@@ -168,6 +169,43 @@ namespace YKoffieNet.MusicPlay
                     catch (Exception) { }
                 }
             }
+        }
+        #endregion Queue
+        [Command("skip")]
+        public async Task Skip(CommandContext ctx)
+        {
+            try
+            {
+                LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
+                await conn.StopAsync();
+                await ctx.RespondAsync("Skipping the current track.");
+                await UpdateQueues();
+            }
+            catch (Exception){ }
+        }
+        [Command("pause")]
+        public async Task Pause(CommandContext ctx)
+        {
+            try
+            {
+                LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
+                await conn.PauseAsync();
+                await ctx.RespondAsync("Pausing the current track.");
+                await UpdateQueues();
+            }
+            catch (Exception) { }
+        }
+        [Command("resume")]
+        public async Task Resume(CommandContext ctx)
+        {
+            try
+            {
+                LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
+                await conn.ResumeAsync();
+                await ctx.RespondAsync("Resuming the current track.");
+                await UpdateQueues();
+            }
+            catch (Exception) { }
         }
     }
 }
