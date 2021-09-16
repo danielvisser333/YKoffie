@@ -15,5 +15,10 @@ namespace YKoffieNet.MusicPlay
         {
             await ctx.RespondAsync("Pong!");
         }
+        [Command("rythm")]
+        public async Task Rythm(CommandContext ctx)
+        {
+            await ctx.RespondAsync("Rythm left behind an unfillable void in my heart.");
+        }
     }
 }

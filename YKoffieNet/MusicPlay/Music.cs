@@ -208,7 +208,7 @@ namespace YKoffieNet.MusicPlay
             catch (Exception) { }
         }
         [Command("shuffle")]
-        public async Task Shuffle(CommandContext ctx)
+        public void Shuffle(CommandContext ctx)
         {
             try
             {
@@ -218,6 +218,29 @@ namespace YKoffieNet.MusicPlay
                 queues[queueIndex].Item2.OrderBy(x => rand.Next());
             }
             catch (Exception) { }
+        }
+        [Command("queue")]
+        public async Task ShowQueue(CommandContext ctx)
+        {
+            LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
+            int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
+            int queueLength = queues[queueIndex].Item2.Count;
+            string queueFormatted = $"Number of songs: {queueLength}.\r\n";
+            int i = 1;
+            foreach(LavalinkTrack song in queues[queueIndex].Item2)
+            {
+                queueFormatted += "1:" + song.Title + ";\r\n";
+                i++;
+            }
+            await ctx.RespondAsync(queueFormatted);
+        }
+        [Command("remove")]
+        public async Task RemoveFromQueue(CommandContext ctx, int index)
+        {
+            LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
+            int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
+            await ctx.RespondAsync($"Removing {queues[queueIndex].Item2[index-1].Title}!");
+            queues[queueIndex].Item2.RemoveAt(index-1);
         }
     }
 }
