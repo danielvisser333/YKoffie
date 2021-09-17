@@ -5,6 +5,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.Lavalink;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -113,6 +114,10 @@ namespace YKoffieNet.MusicPlay
             }
             try
             {
+                if(!musicChannels.Where(i=>i.Guild == ctx.Guild).Any())
+                {
+                    musicChannels.Add(ctx.Channel);
+                }
                 LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
                 if (Gnode == null)
                 {
@@ -195,9 +200,10 @@ namespace YKoffieNet.MusicPlay
                         int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
                         await conn.PlayAsync(queues[queueIndex].Item2.First());
                         await musicChannels.Where(i => i.Guild == conn.Guild).First().SendMessageAsync($"Now playing: {queues[queueIndex].Item2[0].Title}!");
+                        Debug.WriteLine($"Playing next in queue, {queues[queueIndex].Item2[0].Title}");
                         queues[queueIndex].Item2.RemoveAt(0);
                     }
-                    catch (Exception) { }
+                    catch (Exception) {  }
                 }
             }
         }
@@ -211,6 +217,7 @@ namespace YKoffieNet.MusicPlay
                 await conn.StopAsync();
                 await ctx.RespondAsync("Skipping the current track.");
                 await UpdateQueues();
+                //queues.Where(i => i.Item1 == conn.Guild).First().Item2.RemoveAt(0);
             }
             catch (Exception){ }
         }
@@ -280,6 +287,12 @@ namespace YKoffieNet.MusicPlay
             int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
             await ctx.RespondAsync("Clearing the queue!");
             queues[queueIndex].Item2.Clear();
+        }
+        [Command("now")]
+        public async Task NowPlaying(CommandContext ctx)
+        {
+            LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
+            await ctx.RespondAsync(conn.CurrentState.CurrentTrack.Title);
         }
     }
 }
