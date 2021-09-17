@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using YoutubeExplode;
+using YoutubeExplode.Playlists;
 
 namespace YKoffieNet.MusicPlay
 {
@@ -134,6 +136,30 @@ namespace YKoffieNet.MusicPlay
                 await Join(ctx);
                 await Play(ctx, search);
                 return;
+            }
+        }
+        [Command("playlist")]
+        public async Task Playlist(CommandContext ctx, [RemainingText] string url)
+        {
+            YoutubeClient client = new YoutubeClient();
+            IAsyncEnumerable<PlaylistVideo> playlist = client.Playlists.GetVideosAsync(url);
+            int i = 0;
+            List<string> videos = new List<string>();
+            await foreach (var video in playlist)
+            {
+                videos.Add(video.Url);
+                i++;
+            }
+            await ctx.RespondAsync($"Number of songs: {i}!");
+            foreach (var video in videos)
+            {
+                LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
+                if (Gnode == null)
+                {
+                    return;
+                }
+                LavalinkLoadResult result = await Gnode.Rest.GetTracksAsync(video);
+                AddToQueue(ctx.Guild,result.Tracks.First());
             }
         }
         #endregion
