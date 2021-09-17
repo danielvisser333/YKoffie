@@ -15,7 +15,7 @@ namespace YKoffieNet.MusicPlay
 {
     internal class Music : BaseCommandModule
     {
-
+        List<DiscordChannel> musicChannels = new List<DiscordChannel>();
         LavalinkNodeConnection? Gnode;
         List<LavalinkGuildConnection> connections = new List<LavalinkGuildConnection>();
         List<(DiscordGuild, List<LavalinkTrack>)> queues = new List<(DiscordGuild, List<LavalinkTrack>)>();
@@ -57,6 +57,7 @@ namespace YKoffieNet.MusicPlay
             await ctx.RespondAsync($"Joining voice channel, {channel.Name}!");
             await node.ConnectAsync(channel);
             connections.Add(node.GetGuildConnection(channel.Guild));
+            musicChannels.Add(channel);
             queues.Add((channel.Guild,new List<LavalinkTrack>()));
             node.PlaybackFinished += async (s, e) =>
             {
@@ -87,7 +88,9 @@ namespace YKoffieNet.MusicPlay
             {
                 LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
                 await ctx.RespondAsync($"Leaving {channel.Name}!");
+                await ClearQueue(ctx);
                 await conn.DisconnectAsync();
+                musicChannels.Remove(musicChannels.Where(i => i.Guild == ctx.Guild).First());
                 connections.Remove(conn);
             }
             catch (Exception)
@@ -154,7 +157,12 @@ namespace YKoffieNet.MusicPlay
             foreach (var video in videos)
             {
                 LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
-                if (Gnode == null)
+                if (conn.CurrentState.CurrentTrack == null)
+                {
+                    await UpdateQueues();
+                }
+                
+                    if (Gnode == null)
                 {
                     return;
                 }
@@ -184,12 +192,9 @@ namespace YKoffieNet.MusicPlay
                 if (conn.CurrentState.CurrentTrack == null) {
                     try
                     {
-                        /*(DiscordGuild guild, List<LavalinkTrack> queue) = queues.Where(i => i.Item1 == conn.Guild).First();
-                        await conn.PlayAsync(queue.First());
-                        await conn.Channel.SendMessageAsync($"Now playing {queue.First()}");
-                        queues.Find((guild,queue)).*/
                         int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
                         await conn.PlayAsync(queues[queueIndex].Item2.First());
+                        await musicChannels.Where(i => i.Guild == conn.Guild).First().SendMessageAsync($"Now playing: {queues[queueIndex].Item2[0].Title}!");
                         queues[queueIndex].Item2.RemoveAt(0);
                     }
                     catch (Exception) { }
@@ -267,6 +272,14 @@ namespace YKoffieNet.MusicPlay
             int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
             await ctx.RespondAsync($"Removing {queues[queueIndex].Item2[index-1].Title}!");
             queues[queueIndex].Item2.RemoveAt(index-1);
+        }
+        [Command("clear")]
+        public async Task ClearQueue(CommandContext ctx)
+        {
+            LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
+            int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
+            await ctx.RespondAsync("Clearing the queue!");
+            queues[queueIndex].Item2.Clear();
         }
     }
 }
