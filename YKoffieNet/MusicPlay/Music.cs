@@ -11,6 +11,8 @@ using System.Text;
 using System.Threading.Tasks;
 using YoutubeExplode;
 using YoutubeExplode.Playlists;
+using YoutubeExplode.Videos;
+using static DSharpPlus.Entities.DiscordEmbedBuilder;
 
 namespace YKoffieNet.MusicPlay
 {
@@ -130,17 +132,28 @@ namespace YKoffieNet.MusicPlay
                     return;
                 }
                 LavalinkTrack track = result.Tracks.First();
+                YoutubeClient client = new YoutubeClient();
                 DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-                embed.WithUrl(track.Uri.ToString());
-                embed.WithTitle(track.Title);
+                embed.Title = $"Now playing {track.Title}";
+                embed.Url = track.Uri.ToString();
+                Video video = await client.Videos.GetAsync(track.Uri.ToString());
+                embed.Thumbnail = new EmbedThumbnail
+                {
+                    Url = video.Thumbnails.First().Url
+                };
+                embed.Author = new EmbedAuthor
+                {
+                    Name = track.Author
+                };
                 if (conn.CurrentState.CurrentTrack == null)
                 {
-                    await ctx.RespondAsync($"`Playing {embed} : {track.Length.ToString()}!`");
+                    await ctx.RespondAsync(embed.Build());
                     await conn.PlayAsync(track);
                     return;
                 }
                 AddToQueue(ctx.Guild,track);
-                await ctx.RespondAsync($"`Adding {embed} to the queue.`");
+                embed.Title= $"Queued {track.Title}!";
+                await ctx.RespondAsync(embed.Build());
             }
             catch (Exception)
             {
@@ -202,10 +215,20 @@ namespace YKoffieNet.MusicPlay
                     {
                         int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
                         await conn.PlayAsync(queues[queueIndex].Item2.First());
+                        YoutubeClient client = new YoutubeClient();
                         DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-                        embed.WithUrl(queues[queueIndex].Item2[0].Uri.ToString());
-                        embed.WithTitle(queues[queueIndex].Item2[0].Title);
-                        await musicChannels.Where(i => i.Guild == conn.Guild).First().SendMessageAsync($"`Now playing: {embed}, Time: {queues[queueIndex].Item2[0].Length.ToString()}!`");
+                        embed.Title = $"Now playing {queues[queueIndex].Item2[0].Title}";
+                        embed.Url = queues[queueIndex].Item2[0].Uri.ToString();
+                        Video video = await client.Videos.GetAsync(queues[queueIndex].Item2[0].Uri.ToString());
+                        embed.Thumbnail = new EmbedThumbnail
+                        {
+                            Url = video.Thumbnails.First().Url
+                        };
+                        embed.Author = new EmbedAuthor
+                        {
+                            Name = queues[queueIndex].Item2[0].Author
+                        };
+                        await musicChannels.Where(i => i.Guild == conn.Guild).First().SendMessageAsync(embed.Build());
                         queues[queueIndex].Item2.RemoveAt(0);
                     }
                     catch (Exception) {  }
@@ -305,7 +328,20 @@ namespace YKoffieNet.MusicPlay
         public async Task NowPlaying(CommandContext ctx)
         {
             LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
-            await ctx.RespondAsync(conn.CurrentState.CurrentTrack.Title);
+            YoutubeClient client = new YoutubeClient();
+            DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+            embed.Title = $"Now playing {conn.CurrentState.CurrentTrack.Title}";
+            embed.Url = conn.CurrentState.CurrentTrack.Uri.ToString();
+            Video video = await client.Videos.GetAsync(conn.CurrentState.CurrentTrack.Uri.ToString());
+            embed.Thumbnail = new EmbedThumbnail
+            {
+                Url = video.Thumbnails.First().Url
+            };
+            embed.Author = new EmbedAuthor
+            {
+                Name = conn.CurrentState.CurrentTrack.Author
+            };
+            await ctx.RespondAsync(embed);
         }
     }
 }
