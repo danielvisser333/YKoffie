@@ -7,14 +7,14 @@ using YKoffieNet.MusicPlay;
 namespace YKoffieNet {
     public class YKoffieNet
     {
-        public static void Main(string[] Args)
+        public static void Main()
         {
             MainAsync().GetAwaiter().GetResult();
         }
         static async Task MainAsync()
         {
             string token = Config.GetTokenFromConfig();
-            DiscordClient discord = new DiscordClient(
+            DiscordClient discord = new(
                 new DiscordConfiguration()
                 {
                     Token = token,
@@ -23,13 +23,13 @@ namespace YKoffieNet {
                     MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Debug,
                 }
             );
-            ConnectionEndpoint endpoint = new ConnectionEndpoint
+            ConnectionEndpoint endpoint = new()
             {
                 Hostname = "127.0.0.1", // From your server configuration.
                 Port = 2333 // From your server configuration
             };
 
-            LavalinkConfiguration lavalinkConfig = new LavalinkConfiguration
+            LavalinkConfiguration lavalinkConfig = new()
             {
                 Password = "youshallnotpass", // From your server configuration.
                 RestEndpoint = endpoint,

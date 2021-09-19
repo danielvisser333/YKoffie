@@ -15,7 +15,7 @@ namespace YKoffieNet
             string currentDir = Environment.CurrentDirectory;
             currentDir += "//token.txt";
             if (File.Exists(currentDir)){
-                StreamReader reader = new StreamReader(currentDir);
+                StreamReader reader = new(currentDir);
                 string token = reader.ReadToEnd();
                 return token;
             }

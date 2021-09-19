@@ -18,10 +18,10 @@ namespace YKoffieNet.MusicPlay
 {
     internal class Music : BaseCommandModule
     {
-        List<DiscordChannel> musicChannels = new List<DiscordChannel>();
+        List<DiscordChannel> musicChannels = new();
         LavalinkNodeConnection? Gnode;
-        List<LavalinkGuildConnection> connections = new List<LavalinkGuildConnection>();
-        List<(DiscordGuild, List<LavalinkTrack>)> queues = new List<(DiscordGuild, List<LavalinkTrack>)>();
+        List<LavalinkGuildConnection> connections = new();
+        List<(DiscordGuild, List<LavalinkTrack>)> queues = new();
         #region JoinLeave
         //Join the channel the requested member is in.
         [Command("join")]
@@ -30,7 +30,11 @@ namespace YKoffieNet.MusicPlay
             DiscordChannel channel = ctx.Member.VoiceState.Channel;
             if (channel == null)
             {
-                await ctx.RespondAsync("`You are not in a voice channel!`");
+                DiscordEmbedBuilder embed = new()
+                {
+                    Title = "You are not in a voice channel!"
+                };
+                await ctx.RespondAsync(embed.Build());
                 return;
             }
             await Join(ctx, channel);
@@ -41,23 +45,26 @@ namespace YKoffieNet.MusicPlay
         {
             if (channel.Type != ChannelType.Voice)
             {
-                await ctx.RespondAsync("`The requested channel is not a voice channel.`");
+                DiscordEmbedBuilder embedError = new();
+                embedError.Title = $"{channel.Name} is not a valid voice channel!";
+                await ctx.RespondAsync(embedError.Build());
                 return;
             }
             LavalinkExtension lava = ctx.Client.GetLavalink();
             if (!lava.ConnectedNodes.Any())
             {
-                await ctx.RespondAsync("`Internal Server Error.`");
+                DiscordEmbedBuilder embedError = new()
+                {
+                    Title = "Internal server error!"
+                };
+                await ctx.RespondAsync(embedError.Build());
                 return;
             }
             LavalinkNodeConnection node = lava.ConnectedNodes.Values.First();
             Gnode = node;
-            if (channel.Type != ChannelType.Voice)
-            {
-                await ctx.RespondAsync("`Not a valid voice channel.`");
-                return;
-            }
-            await ctx.RespondAsync($"`Joining voice channel, {channel.Name}!`");
+            DiscordEmbedBuilder embed = new();
+            embed.Title = $"Joining voice channel, {channel.Name}!";
+            await ctx.RespondAsync(embed.Build());
             await node.ConnectAsync(channel);
             connections.Add(node.GetGuildConnection(channel.Guild));
             musicChannels.Add(channel);
@@ -90,7 +97,9 @@ namespace YKoffieNet.MusicPlay
             try
             {
                 LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
-                await ctx.RespondAsync($"`Leaving {channel.Name}!`");
+                DiscordEmbedBuilder embed = new();
+                embed.Title = $"Leaving {channel.Name}!";
+                await ctx.RespondAsync(embed.Build());
                 await ClearQueue(ctx);
                 await conn.DisconnectAsync();
                 musicChannels.Remove(musicChannels.Where(i => i.Guild == ctx.Guild).First());
@@ -132,14 +141,14 @@ namespace YKoffieNet.MusicPlay
                     return;
                 }
                 LavalinkTrack track = result.Tracks.First();
-                YoutubeClient client = new YoutubeClient();
-                DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+                YoutubeClient client = new();
+                DiscordEmbedBuilder embed = new();
                 embed.Title = $"Now playing {track.Title}";
                 embed.Url = track.Uri.ToString();
                 Video video = await client.Videos.GetAsync(track.Uri.ToString());
                 embed.Thumbnail = new EmbedThumbnail
                 {
-                    Url = video.Thumbnails.First().Url
+                    Url = video.Thumbnails[0].Url
                 };
                 embed.Author = new EmbedAuthor
                 {
@@ -165,30 +174,39 @@ namespace YKoffieNet.MusicPlay
         [Command("playlist")]
         public async Task Playlist(CommandContext ctx, [RemainingText] string url)
         {
-            YoutubeClient client = new YoutubeClient();
+            await Join(ctx);
+            YoutubeClient client = new();
             IAsyncEnumerable<PlaylistVideo> playlist = client.Playlists.GetVideosAsync(url);
             int i = 0;
-            List<string> videos = new List<string>();
+            List<string> videos = new();
             await foreach (var video in playlist)
             {
                 videos.Add(video.Url);
                 i++;
             }
-            await ctx.RespondAsync($"`Number of songs: {i}!`");
+            DiscordEmbedBuilder embed = new();
+            embed.Title = $"Adding {videos.Count} songs to the queue!";
+            await ctx.Channel.SendMessageAsync(embed.Build());
+            LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
+            if (Gnode == null)
+            {
+                LavalinkExtension lava = ctx.Client.GetLavalink();
+                if (!lava.ConnectedNodes.Any())
+                {
+                    await ctx.RespondAsync("`Internal Server Error.`");
+                    return;
+                }
+                LavalinkNodeConnection node = lava.ConnectedNodes.Values.First();
+                Gnode = node;
+            }
             foreach (var video in videos)
             {
-                LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
+                LavalinkLoadResult result = await Gnode.Rest.GetTracksAsync(video);
+                AddToQueue(ctx.Guild,result.Tracks.First());
                 if (conn.CurrentState.CurrentTrack == null)
                 {
                     await UpdateQueues();
                 }
-                
-                    if (Gnode == null)
-                {
-                    return;
-                }
-                LavalinkLoadResult result = await Gnode.Rest.GetTracksAsync(video);
-                AddToQueue(ctx.Guild,result.Tracks.First());
             }
         }
         #endregion
@@ -201,10 +219,7 @@ namespace YKoffieNet.MusicPlay
                 queue.Add(track);
 
             }
-            catch (Exception)
-            {
-                return;
-            }
+            catch (Exception){}
         }
         public async Task UpdateQueues()
         {
@@ -215,14 +230,14 @@ namespace YKoffieNet.MusicPlay
                     {
                         int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
                         await conn.PlayAsync(queues[queueIndex].Item2.First());
-                        YoutubeClient client = new YoutubeClient();
-                        DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+                        YoutubeClient client = new();
+                        DiscordEmbedBuilder embed = new();
                         embed.Title = $"Now playing {queues[queueIndex].Item2[0].Title}";
                         embed.Url = queues[queueIndex].Item2[0].Uri.ToString();
                         Video video = await client.Videos.GetAsync(queues[queueIndex].Item2[0].Uri.ToString());
                         embed.Thumbnail = new EmbedThumbnail
                         {
-                            Url = video.Thumbnails.First().Url
+                            Url = video.Thumbnails[0].Url
                         };
                         embed.Author = new EmbedAuthor
                         {
@@ -242,8 +257,11 @@ namespace YKoffieNet.MusicPlay
             try
             {
                 LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
+                DiscordEmbedBuilder embed = new();
+                embed.Title = $"Skipping {conn.CurrentState.CurrentTrack.Title}!";
+                embed.Url = conn.CurrentState.CurrentTrack.Uri.ToString();
+                await ctx.RespondAsync(embed);
                 await conn.StopAsync();
-                await ctx.RespondAsync("`Skipping the current track.`");
                 await UpdateQueues();
                 //queues.Where(i => i.Item1 == conn.Guild).First().Item2.RemoveAt(0);
             }
@@ -274,17 +292,15 @@ namespace YKoffieNet.MusicPlay
             catch (Exception) { }
         }
         [Command("shuffle")]
-        public void Shuffle(CommandContext ctx)
+        public async Task Shuffle(CommandContext ctx)
         {
-            try
-            {
-                LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
-                int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
-                Random rand = new Random();
-                queues[queueIndex].Item2.OrderBy(x => rand.Next());
-                ctx.RespondAsync("`Suffled the queue!`");
-            }
-            catch (Exception) { }
+            LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
+            int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
+            Random rand = new();
+            queues[queueIndex] = new(queues[queueIndex].Item1,queues[queueIndex].Item2.OrderBy(x => rand.Next()).ToList());
+            DiscordEmbedBuilder embed = new();
+            embed.Title = "Shuffled the queue!";
+            await ctx.RespondAsync(embed);
         }
         [Command("queue")]
         public async Task ShowQueue(CommandContext ctx)
@@ -292,22 +308,22 @@ namespace YKoffieNet.MusicPlay
             LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
             int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
             int queueLength = queues[queueIndex].Item2.Count;
-            DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+            DiscordEmbedBuilder embed = new();
             embed.WithTitle($"Queue length: {queueLength}!");
             int i = 1;
             foreach(LavalinkTrack song in queues[queueIndex].Item2)
             {
-                embed.AddField($"{i}: [{song.Title}]({song.Uri})","");
+                embed.AddField($"{i}: ", $"[{song.Title}]({song.Uri})");
                 i++;
             }
-            await ctx.RespondAsync(embed);
+            await ctx.RespondAsync(embed.Build());
         }
         [Command("remove")]
         public async Task RemoveFromQueue(CommandContext ctx, int index)
         {
             LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
             int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
-            DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+            DiscordEmbedBuilder embed = new();
             embed.WithUrl(queues[queueIndex].Item2[index - 1].Uri.ToString());
             embed.WithTitle("Removing "+queues[queueIndex].Item2[index - 1].Title+"!");
             await ctx.RespondAsync(embed);
@@ -318,8 +334,10 @@ namespace YKoffieNet.MusicPlay
         {
             LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
             int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
-            DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-            embed.Title = "Clearing the queue!";
+            DiscordEmbedBuilder embed = new()
+            {
+                Title = "Clearing the queue!"
+            };
             await ctx.RespondAsync(embed);
             queues[queueIndex].Item2.Clear();
         }
@@ -327,14 +345,14 @@ namespace YKoffieNet.MusicPlay
         public async Task NowPlaying(CommandContext ctx)
         {
             LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
-            YoutubeClient client = new YoutubeClient();
-            DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+            YoutubeClient client = new();
+            DiscordEmbedBuilder embed = new();
             embed.Title = $"Now playing {conn.CurrentState.CurrentTrack.Title}";
             embed.Url = conn.CurrentState.CurrentTrack.Uri.ToString();
             Video video = await client.Videos.GetAsync(conn.CurrentState.CurrentTrack.Uri.ToString());
             embed.Thumbnail = new EmbedThumbnail
             {
-                Url = video.Thumbnails.First().Url
+                Url = video.Thumbnails[0].Url
             };
             embed.Author = new EmbedAuthor
             {
