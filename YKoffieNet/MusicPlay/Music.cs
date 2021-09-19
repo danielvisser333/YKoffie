@@ -28,7 +28,7 @@ namespace YKoffieNet.MusicPlay
             DiscordChannel channel = ctx.Member.VoiceState.Channel;
             if (channel == null)
             {
-                await ctx.RespondAsync("You are not in a voice channel!");
+                await ctx.RespondAsync("`You are not in a voice channel!`");
                 return;
             }
             await Join(ctx, channel);
@@ -39,23 +39,23 @@ namespace YKoffieNet.MusicPlay
         {
             if (channel.Type != ChannelType.Voice)
             {
-                await ctx.RespondAsync("The requested channel is not a voice channel.");
+                await ctx.RespondAsync("`The requested channel is not a voice channel.`");
                 return;
             }
             LavalinkExtension lava = ctx.Client.GetLavalink();
             if (!lava.ConnectedNodes.Any())
             {
-                await ctx.RespondAsync("Internal Server Error.");
+                await ctx.RespondAsync("`Internal Server Error.`");
                 return;
             }
             LavalinkNodeConnection node = lava.ConnectedNodes.Values.First();
             Gnode = node;
             if (channel.Type != ChannelType.Voice)
             {
-                await ctx.RespondAsync("Not a valid voice channel.");
+                await ctx.RespondAsync("`Not a valid voice channel.`");
                 return;
             }
-            await ctx.RespondAsync($"Joining voice channel, {channel.Name}!");
+            await ctx.RespondAsync($"`Joining voice channel, {channel.Name}!`");
             await node.ConnectAsync(channel);
             connections.Add(node.GetGuildConnection(channel.Guild));
             musicChannels.Add(channel);
@@ -72,7 +72,7 @@ namespace YKoffieNet.MusicPlay
             DiscordChannel channel = ctx.Member.VoiceState.Channel;
             if (channel == null)
             {
-                await ctx.RespondAsync("You are not in a voice channel!");
+                await ctx.RespondAsync("`You are not in a voice channel!`");
                 return;
             }
             await Leave(ctx, channel);
@@ -82,13 +82,13 @@ namespace YKoffieNet.MusicPlay
         {
             if (channel.Type != ChannelType.Voice)
             {
-                await ctx.RespondAsync("The requested channel is not a voice channel.");
+                await ctx.RespondAsync("`The requested channel is not a voice channel.`");
                 return;
             }
             try
             {
                 LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
-                await ctx.RespondAsync($"Leaving {channel.Name}!");
+                await ctx.RespondAsync($"`Leaving {channel.Name}!`");
                 await ClearQueue(ctx);
                 await conn.DisconnectAsync();
                 musicChannels.Remove(musicChannels.Where(i => i.Guild == ctx.Guild).First());
@@ -109,7 +109,7 @@ namespace YKoffieNet.MusicPlay
         {
             if (ctx.Member.VoiceState == null || ctx.Member.VoiceState.Channel == null)
             {
-                await ctx.RespondAsync("You are not in a voice channel.");
+                await ctx.RespondAsync("`You are not in a voice channel.`");
                 return;
             }
             try
@@ -126,18 +126,21 @@ namespace YKoffieNet.MusicPlay
                 LavalinkLoadResult result = await Gnode.Rest.GetTracksAsync(search);
                 if (result.LoadResultType == LavalinkLoadResultType.LoadFailed || result.LoadResultType == LavalinkLoadResultType.NoMatches)
                 {
-                    await ctx.RespondAsync("Failed to play song.");
+                    await ctx.RespondAsync("`Failed to play song.`");
                     return;
                 }
                 LavalinkTrack track = result.Tracks.First();
+                DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+                embed.WithUrl(track.Uri.ToString());
+                embed.WithTitle(track.Title);
                 if (conn.CurrentState.CurrentTrack == null)
                 {
-                    await ctx.RespondAsync($"Playing found track {track.Title}!");
+                    await ctx.RespondAsync($"`Playing {embed} : {track.Length.ToString()}!`");
                     await conn.PlayAsync(track);
                     return;
                 }
                 AddToQueue(ctx.Guild,track);
-                await ctx.RespondAsync($"Adding {track.Title} to the queue.");
+                await ctx.RespondAsync($"`Adding {embed} to the queue.`");
             }
             catch (Exception)
             {
@@ -158,7 +161,7 @@ namespace YKoffieNet.MusicPlay
                 videos.Add(video.Url);
                 i++;
             }
-            await ctx.RespondAsync($"Number of songs: {i}!");
+            await ctx.RespondAsync($"`Number of songs: {i}!`");
             foreach (var video in videos)
             {
                 LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
@@ -199,8 +202,10 @@ namespace YKoffieNet.MusicPlay
                     {
                         int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
                         await conn.PlayAsync(queues[queueIndex].Item2.First());
-                        await musicChannels.Where(i => i.Guild == conn.Guild).First().SendMessageAsync($"Now playing: {queues[queueIndex].Item2[0].Title}!");
-                        Debug.WriteLine($"Playing next in queue, {queues[queueIndex].Item2[0].Title}");
+                        DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+                        embed.WithUrl(queues[queueIndex].Item2[0].Uri.ToString());
+                        embed.WithTitle(queues[queueIndex].Item2[0].Title);
+                        await musicChannels.Where(i => i.Guild == conn.Guild).First().SendMessageAsync($"`Now playing: {embed}, Time: {queues[queueIndex].Item2[0].Length.ToString()}!`");
                         queues[queueIndex].Item2.RemoveAt(0);
                     }
                     catch (Exception) {  }
@@ -215,7 +220,7 @@ namespace YKoffieNet.MusicPlay
             {
                 LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
                 await conn.StopAsync();
-                await ctx.RespondAsync("Skipping the current track.");
+                await ctx.RespondAsync("`Skipping the current track.`");
                 await UpdateQueues();
                 //queues.Where(i => i.Item1 == conn.Guild).First().Item2.RemoveAt(0);
             }
@@ -228,7 +233,7 @@ namespace YKoffieNet.MusicPlay
             {
                 LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
                 await conn.PauseAsync();
-                await ctx.RespondAsync("Pausing the current track.");
+                await ctx.RespondAsync("`Pausing the current track.`");
                 await UpdateQueues();
             }
             catch (Exception) { }
@@ -240,7 +245,7 @@ namespace YKoffieNet.MusicPlay
             {
                 LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
                 await conn.ResumeAsync();
-                await ctx.RespondAsync("Resuming the current track.");
+                await ctx.RespondAsync("`Resuming the current track.`");
                 await UpdateQueues();
             }
             catch (Exception) { }
@@ -254,6 +259,7 @@ namespace YKoffieNet.MusicPlay
                 int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
                 Random rand = new Random();
                 queues[queueIndex].Item2.OrderBy(x => rand.Next());
+                ctx.RespondAsync("`Suffled the queue!`");
             }
             catch (Exception) { }
         }
@@ -263,13 +269,17 @@ namespace YKoffieNet.MusicPlay
             LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
             int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
             int queueLength = queues[queueIndex].Item2.Count;
-            string queueFormatted = $"Number of songs: {queueLength}.\r\n";
+            string queueFormatted = $"```Number of songs: {queueLength}.\r\n";
             int i = 1;
             foreach(LavalinkTrack song in queues[queueIndex].Item2)
             {
-                queueFormatted += "1:" + song.Title + ";\r\n";
+                DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+                embed.WithUrl(song.Uri.ToString());
+                embed.WithTitle(song.Title);
+                queueFormatted += i+":{embed}\r\n";
                 i++;
             }
+            queueFormatted += "```";
             await ctx.RespondAsync(queueFormatted);
         }
         [Command("remove")]
@@ -277,7 +287,10 @@ namespace YKoffieNet.MusicPlay
         {
             LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
             int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
-            await ctx.RespondAsync($"Removing {queues[queueIndex].Item2[index-1].Title}!");
+            DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+            embed.WithUrl(queues[queueIndex].Item2[index - 1].Uri.ToString());
+            embed.WithTitle(queues[queueIndex].Item2[index - 1].Title);
+            await ctx.RespondAsync($"`Removing {embed}!`");
             queues[queueIndex].Item2.RemoveAt(index-1);
         }
         [Command("clear")]
@@ -285,7 +298,7 @@ namespace YKoffieNet.MusicPlay
         {
             LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
             int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
-            await ctx.RespondAsync("Clearing the queue!");
+            await ctx.RespondAsync("`Clearing the queue!`");
             queues[queueIndex].Item2.Clear();
         }
         [Command("now")]

@@ -1,27 +1,30 @@
-﻿/*using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json;
+using System.Diagnostics;
 
 namespace YKoffieNet
 {
     internal class Config
     {
-        public string GetTokenFromConfig()
+        public static string GetTokenFromConfig()
         {
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-            string currentDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-            try
-            {
-                FileStream tokenFile = File.OpenRead(currentDir + "/token.txt");
+            string currentDir = Environment.CurrentDirectory;
+            currentDir += "//token.txt";
+            if (File.Exists(currentDir)){
+                StreamReader reader = new StreamReader(currentDir);
+                string token = reader.ReadToEnd();
+                return token;
             }
-            catch (FileNotFoundException)
+            else
             {
-                FileStream tokenFile = File.Create(currentDir + "/token.txt");
+                File.Create(currentDir);
+                Environment.Exit(0);
+                return "";
             }
         }
     }
 }
-*/

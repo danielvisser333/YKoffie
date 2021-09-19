@@ -7,14 +7,13 @@ using YKoffieNet.MusicPlay;
 namespace YKoffieNet {
     public class YKoffieNet
     {
-        static string token = "ODg3MDM0NzA4NzA4NDM4MDQ2.YT-Rcg.KEVAFkbJA-PjssHnX7ivLKy4T-Y";
         public static void Main(string[] Args)
         {
             MainAsync().GetAwaiter().GetResult();
         }
         static async Task MainAsync()
         {
-            
+            string token = Config.GetTokenFromConfig();
             DiscordClient discord = new DiscordClient(
                 new DiscordConfiguration()
                 {
