@@ -292,18 +292,15 @@ namespace YKoffieNet.MusicPlay
             LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
             int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
             int queueLength = queues[queueIndex].Item2.Count;
-            string queueFormatted = $"```Number of songs: {queueLength}.\r\n";
+            DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+            embed.WithTitle($"Queue length: {queueLength}!");
             int i = 1;
             foreach(LavalinkTrack song in queues[queueIndex].Item2)
             {
-                DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
-                embed.WithUrl(song.Uri.ToString());
-                embed.WithTitle(song.Title);
-                queueFormatted += i+":{embed}\r\n";
+                embed.AddField($"{i}: [{song.Title}]({song.Uri})","");
                 i++;
             }
-            queueFormatted += "```";
-            await ctx.RespondAsync(queueFormatted);
+            await ctx.RespondAsync(embed);
         }
         [Command("remove")]
         public async Task RemoveFromQueue(CommandContext ctx, int index)
@@ -312,8 +309,8 @@ namespace YKoffieNet.MusicPlay
             int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
             embed.WithUrl(queues[queueIndex].Item2[index - 1].Uri.ToString());
-            embed.WithTitle(queues[queueIndex].Item2[index - 1].Title);
-            await ctx.RespondAsync($"`Removing {embed}!`");
+            embed.WithTitle("Removing "+queues[queueIndex].Item2[index - 1].Title+"!");
+            await ctx.RespondAsync(embed);
             queues[queueIndex].Item2.RemoveAt(index-1);
         }
         [Command("clear")]
@@ -321,7 +318,9 @@ namespace YKoffieNet.MusicPlay
         {
             LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
             int queueIndex = queues.FindIndex(i => i.Item1 == conn.Guild);
-            await ctx.RespondAsync("`Clearing the queue!`");
+            DiscordEmbedBuilder embed = new DiscordEmbedBuilder();
+            embed.Title = "Clearing the queue!";
+            await ctx.RespondAsync(embed);
             queues[queueIndex].Item2.Clear();
         }
         [Command("now")]
