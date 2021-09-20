@@ -58,9 +58,17 @@ namespace YKoffieNet
             {
                 File.Create(currentDir);
             }
-            StreamWriter writer = new(currentDir);
-            string serial = JsonConvert.SerializeObject(config);
-            await writer.WriteAsync(serial);
+            try
+            {
+                StreamWriter writer = new(currentDir);
+                string serial = JsonConvert.SerializeObject(config);
+                await writer.WriteAsync(serial);
+                writer.Close();
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
         public class BotConfig
         {
