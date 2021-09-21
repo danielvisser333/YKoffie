@@ -41,6 +41,7 @@ namespace YKoffieNet
             }
             StreamReader reader = new(currentDir);
             BotConfig? config = JsonConvert.DeserializeObject<BotConfig>(reader.ReadToEnd());
+            reader.Close();
             if (config == null)
             {
                 return new BotConfig()

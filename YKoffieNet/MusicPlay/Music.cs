@@ -240,12 +240,14 @@ namespace YKoffieNet.MusicPlay
         }
         #endregion
         #region Queue
-        public void AddToQueue(DiscordGuild guild, LavalinkTrack track)
+        public void AddToQueue(DiscordGuild guild, LavalinkTrack track, bool playTop = false)
         {
             try
             {
                 List<LavalinkTrack> queue = queues.Where(i => i.Item1 == guild).First().Item2;
-                queue.Add(track);
+
+                if (!playTop) { queue.Add(track); }
+                else { queue.Insert(0, track); }
 
             }
             catch (Exception){}
@@ -395,6 +397,10 @@ namespace YKoffieNet.MusicPlay
         {
             if (!config.guildConfigs.Where(i => i.guildId == ctx.Guild.Id).Any())
             {
+                config = GetBotConfig();
+            }
+            if (!config.guildConfigs.Where(i => i.guildId == ctx.Guild.Id).Any())
+            {
                 config.guildConfigs.Add(new() { guildId = ctx.Guild.Id});
                 await SaveBotConfig(config);
             }
@@ -443,19 +449,92 @@ namespace YKoffieNet.MusicPlay
                 DiscordEmbedBuilder embed = new();
                 embed.Title = "Config";
                 int a = 0;
-                if (value.ToLower() == "maximumplaylistlenght" && int.TryParse(contents, out a))
+                bool b = false;
+                if (value.ToLower() == "maximumplaylistlength" && int.TryParse(contents, out a))
                 {
                     config.guildConfigs[confIndex].maxPlaylistLength = a;
                     embed.Description = $"Set maximum playlist length to {a}.";
                 }
-                bool b = false;
-                if (value.ToLower() == "allowduplicates" && bool.TryParse(contents, out b))
+                else if (value.ToLower() == "allowduplicates" && bool.TryParse(contents, out b))
                 {
-                    config.guildConfigs[confIndex].maxPlaylistLength = a;
-                    embed.Description = $"Set allow duplicates to {a}.";
+                    config.guildConfigs[confIndex].allowDuplicates = b;
+                    embed.Description = $"Set allow duplicates to {b}.";
+                }
+                else
+                {
+                    embed.Description = "Invalid config option!";
                 }
                 await ctx.Channel.SendMessageAsync(embed);
                 await SaveBotConfig(config);
+            }
+        }
+        [Command("playtop")]
+        public async Task Playtop(CommandContext ctx, [RemainingText] string search)
+        {
+            if (ctx.Member.VoiceState == null || ctx.Member.VoiceState.Channel == null)
+            {
+                await ctx.RespondAsync("`You are not in a voice channel.`");
+                return;
+            }
+            try
+            {
+                if (!musicChannels.Where(i => i.Guild == ctx.Guild).Any())
+                {
+                    musicChannels.Add(ctx.Channel);
+                }
+                LavalinkGuildConnection conn = connections.Where(i => i.Guild == ctx.Guild).First();
+                if (Gnode == null)
+                {
+                    return;
+                }
+                LavalinkLoadResult result = await Gnode.Rest.GetTracksAsync(search);
+                if (result.LoadResultType == LavalinkLoadResultType.LoadFailed || result.LoadResultType == LavalinkLoadResultType.NoMatches)
+                {
+                    await ctx.RespondAsync("`Failed to play song.`");
+                    return;
+                }
+                LavalinkTrack track = result.Tracks.First();
+                YoutubeClient client = new();
+                DiscordEmbedBuilder embed = new();
+                embed.Title = $"Now playing {track.Title}";
+                embed.Url = track.Uri.ToString();
+                Video video = await client.Videos.GetAsync(track.Uri.ToString());
+                embed.Thumbnail = new EmbedThumbnail
+                {
+                    Url = video.Thumbnails[0].Url
+                };
+                embed.Author = new EmbedAuthor
+                {
+                    Name = track.Author
+                };
+                if (conn.CurrentState.CurrentTrack == null)
+                {
+                    await ctx.RespondAsync(embed.Build());
+                    await conn.PlayAsync(track);
+                    return;
+                }
+                if (!config.guildConfigs.Where(i => i.guildId == ctx.Guild.Id).Any() && config.guildConfigs.Count == 0)
+                {
+                    config = GetBotConfig();
+                }
+                GuildConfig conf = config.guildConfigs.Where(i => i.guildId == ctx.Guild.Id).First();
+                List<LavalinkTrack> queue = queues.Where(i => i.Item1 == ctx.Guild).First().Item2;
+                if (conf == null)
+                {
+                    conf = new();
+                }
+                if (conf.allowDuplicates || !queue.Where(i => i.Uri == track.Uri).Any())
+                {
+                    AddToQueue(ctx.Guild, track, true);
+                    embed.Title = $"Added {track.Title} to the top of the queue!";
+                    await ctx.RespondAsync(embed.Build());
+                }
+            }
+            catch (Exception)
+            {
+                await Join(ctx);
+                await Playtop(ctx, search);
+                return;
             }
         }
     }
