@@ -42,6 +42,7 @@ namespace YKoffieNet {
             });
             commands.RegisterCommands<PingPong>();
             commands.RegisterCommands<Music>();
+            //commands.SetHelpFormatter<Help>();
             await discord.ConnectAsync();
             await lavalink.ConnectAsync(lavalinkConfig);
             await Task.Delay(-1);

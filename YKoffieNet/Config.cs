@@ -80,6 +80,7 @@ namespace YKoffieNet
             public ulong guildId;
             public int maxPlaylistLength = 0;
             public bool allowDuplicates = true;
+            public List<Uri> banList = new List<Uri>();
         }
     }
 }

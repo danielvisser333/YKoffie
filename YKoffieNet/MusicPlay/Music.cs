@@ -154,7 +154,7 @@ namespace YKoffieNet.MusicPlay
                 LavalinkTrack track = result.Tracks.First();
                 YoutubeClient client = new();
                 DiscordEmbedBuilder embed = new();
-                embed.Title = $"Now playing {track.Title}";
+                embed.Title = $"Now playing {track.Title}, Duration: {track.Length}.";
                 embed.Url = track.Uri.ToString();
                 Video video = await client.Videos.GetAsync(track.Uri.ToString());
                 embed.Thumbnail = new EmbedThumbnail
@@ -167,8 +167,16 @@ namespace YKoffieNet.MusicPlay
                 };
                 if (conn.CurrentState.CurrentTrack == null)
                 {
+                    int confIndex = config.guildConfigs.FindIndex(i => i.guildId == ctx.Guild.Id);
+                    if (!config.guildConfigs[confIndex].banList.Contains(track.Uri))
+                    {
+                        await conn.PlayAsync(track);
+                    }
+                    else
+                    {
+                        embed.Title = "The specified track is banned on YKoffie!";
+                    }
                     await ctx.RespondAsync(embed.Build());
-                    await conn.PlayAsync(track);
                     return;
                 }
                 GuildConfig conf = config.guildConfigs.Where(i => i.guildId == ctx.Guild.Id).First();
@@ -179,9 +187,17 @@ namespace YKoffieNet.MusicPlay
                 }
                 if (conf.allowDuplicates || !queue.Where(i => i.Uri == track.Uri).Any())
                 {
-                    AddToQueue(ctx.Guild, track);
-                    embed.Title = $"Queued {track.Title}!";
-                    await ctx.RespondAsync(embed.Build());
+                    int confIndex = config.guildConfigs.FindIndex(i => i.guildId == ctx.Guild.Id);
+                    if (!config.guildConfigs[confIndex].banList.Contains(track.Uri))
+                    {
+                        AddToQueue(ctx.Guild, track);
+                        embed.Title = $"Queued {track.Title}!";
+                    }
+                    else
+                    {
+                        embed.Title = "The specified track is banned on YKoffie!";
+                    }
+                        await ctx.RespondAsync(embed.Build());
                 }
             }
             catch (Exception)
@@ -405,10 +421,17 @@ namespace YKoffieNet.MusicPlay
                 await SaveBotConfig(config);
             }
             GuildConfig conf = config.guildConfigs.Where(i => i.guildId == ctx.Guild.Id).First();
+            string banList = "";
+            foreach (Uri url in conf.banList)
+            {
+                banList += $"\r\n{url}";
+            }
+            banList += ".";
             DiscordEmbedBuilder embed = new();
             embed.Title = "Config";
             embed.AddField("Maximum playlist length: ", conf.maxPlaylistLength.ToString());
             embed.AddField("Allow duplicates: ", conf.allowDuplicates.ToString());
+            embed.AddField("Banned songs: ", banList);
             await ctx.Channel.SendMessageAsync(embed);
         }
         [Command("config")]
@@ -432,7 +455,16 @@ namespace YKoffieNet.MusicPlay
                 {
                     embed.Description = $"Allowing Duplicates: {config.guildConfigs[confIndex].allowDuplicates}.";
                 }
-                await ctx.Channel.SendMessageAsync(embed);
+                if (value.ToLower() == "banlist")
+                {
+                    string banList = "";
+                    foreach (Uri url in config.guildConfigs[confIndex].banList)
+                    {
+                        banList += $"\r\n{url}";
+                    }
+                    embed.Description = "Banned songs: \r\n" + banList;
+                }
+                    await ctx.Channel.SendMessageAsync(embed);
             }
         }
         [Command("config")]
@@ -507,6 +539,13 @@ namespace YKoffieNet.MusicPlay
                 {
                     Name = track.Author
                 };
+                int confIndex = config.guildConfigs.FindIndex(i => i.guildId == ctx.Guild.Id);
+                if (config.guildConfigs[confIndex].banList.Contains(track.Uri))
+                {
+                    embed.Title = "The specified song is banned from the server!";
+                    await ctx.RespondAsync(embed.Build());
+                    return;
+                }
                 if (conn.CurrentState.CurrentTrack == null)
                 {
                     await ctx.RespondAsync(embed.Build());
@@ -529,6 +568,10 @@ namespace YKoffieNet.MusicPlay
                     embed.Title = $"Added {track.Title} to the top of the queue!";
                     await ctx.RespondAsync(embed.Build());
                 }
+                else
+                {
+                    embed.Title = "This guild does not allow duplicate songs!";
+                }
             }
             catch (Exception)
             {
@@ -536,6 +579,40 @@ namespace YKoffieNet.MusicPlay
                 await Playtop(ctx, search);
                 return;
             }
+        }
+        [Command("ban")]
+        public async Task Ban(CommandContext ctx, [RemainingText] string search)
+        {
+            if (Gnode == null)
+            {
+                return;
+            }
+            LavalinkLoadResult result = await Gnode.Rest.GetTracksAsync(search);
+            int confIndex = config.guildConfigs.FindIndex(i => i.guildId == ctx.Guild.Id);
+            config.guildConfigs[confIndex].banList.Add(result.Tracks.First().Uri);
+            await SaveBotConfig(config);
+            DiscordEmbedBuilder embed = new();
+            embed.Title = "Ban";
+            embed.Description = $"Banned {result.Tracks.First().Title} from YKoffie!";
+            embed.Url = result.Tracks.First().Uri.ToString();
+            await ctx.RespondAsync(embed.Build());
+        }
+        [Command("unban")]
+        public async Task Unban(CommandContext ctx, string search)
+        {
+            if (Gnode == null)
+            {
+                return;
+            }
+            LavalinkLoadResult result = await Gnode.Rest.GetTracksAsync(search);
+            int confIndex = config.guildConfigs.FindIndex(i => i.guildId == ctx.Guild.Id);
+            config.guildConfigs[confIndex].banList.Remove(result.Tracks.First().Uri);
+            await SaveBotConfig(config);
+            DiscordEmbedBuilder embed = new();
+            embed.Title = "Unban";
+            embed.Description = $"Unbanned {result.Tracks.First().Title} from YKoffie!";
+            embed.Url = result.Tracks.First().Uri.ToString();
+            await ctx.RespondAsync(embed.Build());
         }
     }
 }
